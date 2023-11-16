@@ -1,5 +1,9 @@
 # chatwootBrasil
 
+[Wiki ChatwootBrasil](https://github.com/ssteeltm/chatwootBrasil/wiki)
+
+
+
 <details>
 <summary>Exibir aba TODOS apenas para Admin's</summary>
 

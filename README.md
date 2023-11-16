@@ -25,3 +25,20 @@ systemctl restart chatwoot.target
 ```
 
 </details>
+
+
+
+<details>
+<summary>Chatwoot Desconectando</summary>
+
+
+### Setar no /home/chatwoot/chatwoot/.env
+```bash
+RACK_TIMEOUT_SERVICE_TIMEOUT=0
+```
+
+```bash
+systemctl restart chatwoot.target
+```
+
+</details>

@@ -1,0 +1,2696 @@
+{
+  "name": "Campanha-CW-Quepasa",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select c.custom_attributes,c.phone_number,c.identifier,c.name,c.id from taggings t \ninner join contacts c  on t.taggable_id = c.id \ninner join tags t2 on t.tag_id = t2.id \nwhere taggable_type = 'Contact'\nand t2.\"name\" = '{{ $json[\"title\"] }}'\n",
+        "additionalFields": {}
+      },
+      "id": "2cd4dfd3-547d-4bff-a09d-0f55ade3258b",
+      "name": "Contatos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -7960,
+        1460
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Obtem dados nescessários\n",
+        "height": 1038.083200917103,
+        "width": 2677.304189885342,
+        "color": 5
+      },
+      "id": "bf4a7fb3-9a42-4a0f-ba9a-5ed6940a526d",
+      "name": "Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -9260,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select * from inboxes where id = {{ $('IF6').item.json.inbox_id }} and account_id = {{ $json.account_id }}",
+        "additionalFields": {}
+      },
+      "id": "8f2e4864-ecaf-43ec-b130-bfc6da06441d",
+      "name": "get sms inbox",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -8080,
+        960
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "f65a0394-3ead-4a0b-8e7c-14213fa47e7f",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -7000,
+        1320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select *\nfrom channel_api c\ninner join inboxes i on c.id = i.channel_id \nwhere i.id = {{ $json.provider_config.api_key }}\n",
+        "additionalFields": {}
+      },
+      "id": "e00bbb24-6858-48a7-b731-b92230ab7ab3",
+      "name": "get identifier",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -7760,
+        1240
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select * from channel_sms where id = {{ $json.channel_id }}",
+        "additionalFields": {}
+      },
+      "id": "7e4f8640-43b2-4316-b33b-c29805cea6a5",
+      "name": "get real inbox id",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -7620,
+        940
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "quepasaToken",
+              "value": "={{ $json.webhook_url.split(\"qptoken=\").length > 1 ? $json.webhook_url.split(\"qptoken=\")[1].split('&')[0] : $json.identifier }}"
+            },
+            {
+              "name": "campanha.id",
+              "value": "={{ $('IF6').item.json.id }}"
+            },
+            {
+              "name": "msg.title",
+              "value": "={{ $('IF6').item.json.title }}"
+            },
+            {
+              "name": "msg.message",
+              "value": "={{ $('IF6').item.json.message }}"
+            },
+            {
+              "name": "=cw_host",
+              "value": "={{ $json.webhook_url.split(\"cwhost=\")[1].split('&')[0]}}"
+            },
+            {
+              "name": "qp_inbox",
+              "value": "={{ $('get real inbox id').item.json.provider_config.api_key }}"
+            },
+            {
+              "name": "disparo_inbox",
+              "value": "={{ $('get sms inbox').item.json.id }}"
+            },
+            {
+              "name": "utoken",
+              "value": "={{ $json.webhook_url.split(\"utoken=\")[1].split('&')[0]}}"
+            },
+            {
+              "name": "anexo",
+              "value": "={{ $('IF6').item.json.message.split('&anexo=')[1].split('&')[0] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0292503-26af-431e-81d7-64257a1a5ca1",
+      "name": "Set1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -7500,
+        1240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "3ba86837-4964-4462-a79b-6b51aedb02dd",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -6720,
+        1460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Envios para o whatsapp",
+        "height": 855.3078073434489,
+        "width": 3467.526397170319,
+        "color": 4
+      },
+      "id": "e1c084f4-be7c-4cd5-87dc-5a54c00e197b",
+      "name": "Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3340,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "summarize",
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "field": "id"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bad122c3-67a7-4012-bb7b-5b554795a8e9",
+      "name": "Item Lists",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        -7700,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "367372ca-34af-48b4-b710-78b83036cd93",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -7460,
+        1480
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "msg_content",
+              "stringValue": "="
+            },
+            {
+              "name": "message_type",
+              "stringValue": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b81e4ea7-1937-4292-8df9-78a5e09f123e",
+      "name": "mensagem inicio",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -6160,
+        1500
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Dados Chatwoot').item.json.cw_host }}/api/v1/accounts/{{ $('Dados Chatwoot').item.json.account_id }}/conversations/{{ $json.payload.conversation_id }}/messages  ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Dados Chatwoot').item.json.api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n  \"content\": \"⚠️ Campanha ***{{ $('Merge1').item.json.msg.title }}*** Iniciada para o público: ***{{ $('Merge1').item.json[\"title\"] }}*** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n} ",
+        "options": {}
+      },
+      "id": "fbe928ea-93e9-4bd4-98cb-61bc9523ac19",
+      "name": "Envia mensagem2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -4105,
+        1763
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": "={{ 0 }}"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "ea2812fa-2437-4f9b-95bb-9c227f1e11d8",
+      "name": "IF1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -4725,
+        1623
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Dados Chatwoot').item.json.cw_host }}/api/v1/accounts/{{ $('Dados Chatwoot').item.json.account_id }}/conversations/{{ $json.display_id }}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Dados Chatwoot').item.json.api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n \"content\": \"⚠️ Campanha ***{{ $('Merge1').item.json.msg.title }}*** Iniciada para o público: ***{{ $('Merge1').item.json[\"title\"] }}*** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n} ",
+        "options": {}
+      },
+      "id": "b86f7d41-12b7-45d9-bef3-564f7c32298b",
+      "name": "Envia mensagem3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -4305,
+        1603
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"get identifier\"].json.webhook_url.split('cwhost=')[1].split(\"&\")[0] }}/api/v1/accounts/{{ $node[\"get identifier\"].json.account_id }}/conversations/{{ $json.id }}/toggle_status ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $node[\"get identifier\"].json.webhook_url.split('atoken=')[1].split(\"&\")[0] }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"status\": \"open\",\n    \"snoozed_until\": null\n}",
+        "options": {}
+      },
+      "id": "37cfc320-ac3f-4c16-b345-c17357ec2736",
+      "name": "Abre a conversa1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -4265,
+        1763
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Dados Chatwoot').item.json.cw_host }}/api/v1/accounts/{{ $('Dados Chatwoot').item.json.account_id }}/conversations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Dados Chatwoot').item.json.api_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=inbox_id",
+              "value": "={{ $('Merge1').item.json[\"disparo_inbox\"] }}"
+            },
+            {
+              "name": "contact_id",
+              "value": "={{ $('ChatWoot1').item.json.payload[0].id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bd250533-7817-4853-96f7-ea70fc9a19b7",
+      "name": "Cria cvs com contato1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -4420,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Merge4').item.json.cw_host }}/api/v1/accounts/{{ $('Merge4').item.json.account_id }}/conversations/{{ $('Merge4').item.json.conversation_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Merge4').item.json.utoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=Olá!\nEste é o relatório da sua campanha enviada:\n\n***Nome campanha***: {{ $('Merge4').item.json[\"msg\"][\"title\"] }}\n\n***Público (marcador) selecionado***: {{ $('Merge4').item.json[\"title\"] }}\n\n***Mensagem enviada***: {{ $('Merge4').item.json[\"msg\"][\"message\"] }}\n\n***Quantidade de contatos enviados***: {{ $('Merge4').item.json[\"count_id\"] }}"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            },
+            {
+              "name": "private",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "51e18eea-7277-4440-8237-37a3c461fd42",
+      "name": "envia resumo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -159,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "api_key",
+              "stringValue": "={{ $('Merge1').item.json.utoken }}"
+            },
+            {
+              "name": "cw_host",
+              "stringValue": "={{ $('Merge1').item.json.cw_host }}"
+            },
+            {
+              "name": "account_id",
+              "stringValue": "={{ $json.account_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d7148580-00cc-4f4b-9e6e-8e6c57948368",
+      "name": "Dados Chatwoot",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -5800,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "9febf2d8-4ce9-4c8e-9003-7da56947420a",
+      "name": "Merge5",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -3920,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "eae88bdb-df38-4616-b664-5583ac88ac0b",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1300,
+        1380
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "341ca0e3-9d27-40fa-8065-4f0fa7cd8ec0",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -539,
+        640
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {},
+      "id": "905e12ca-2c72-4281-9657-2a4e1de2e862",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -6400,
+        1500
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "conversation_id",
+              "stringValue": "={{ $json.conversation_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "06ee9c33-18dc-4b61-b2ab-24f52bad3ed4",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -3240,
+        1340
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "db0e393f-eaa2-4167-96d5-f6d85192268b",
+      "name": "Merge4",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -999,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Mensagems informativas do status de campanhas\n\n* ## Cria conversa se não houver\n* ## Cria contato se não houver\n",
+        "height": 876.6981924137083,
+        "width": 2662.5291942666363,
+        "color": 4
+      },
+      "id": "fd6728d1-4a3b-41a4-bdb3-9b3d8911155b",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -6440,
+        1180
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "20f46f5e-8800-4a20-94a8-940ceeadb0eb",
+      "name": "Merge6",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -3660,
+        1340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n display_id, \n status\nFROM conversations \nWHERE \n\taccount_id = '{{ $node[\"get identifier\"].json.account_id }}' \n\tAND inbox_id = '{{ $('IF6').item.json.inbox_id }}'\n\tAND contact_id = {{ $json.id }}\nORDER BY id DESC\nLIMIT 1",
+        "options": {}
+      },
+      "id": "70bba5d5-dbff-4a28-a69c-de959f308572",
+      "name": "busca cvs contato1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [
+        -4905,
+        1623
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO \"contacts\" (\"name\",\"phone_number\", \"identifier\", \"account_id\", \"created_at\", \"updated_at\", \"last_activity_at\") VALUES ('{{ $('Dados Chatwoot').item.json.nome_contato }}','{{ $('Dados Chatwoot').item.json.telefone }}', '{{ $('Dados Chatwoot').item.json.identifier }}',{{ $json.account }}, NOW(), NOW(), NOW());",
+        "additionalFields": {
+          "queryParams": "={{ $json.account }},  {{ $('Dados Chatwoot').item.json.telefone }},  {{ $('Dados Chatwoot').item.json.identificador }},  {{ $('Dados Chatwoot').item.json.nome_contato }}"
+        }
+      },
+      "id": "db474fe0-7732-4408-b402-7c6607d37123",
+      "name": "Cria o Contato1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -5260,
+        1840
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Sucesso"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "e6ab6153-0bf3-47da-ba7c-5f9d98b073d4",
+      "name": "IF2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -5260,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{ $node['Dados Chatwoot'].json.cw_host }}",
+        "accessToken": "={{ $node['Dados Chatwoot'].json.utoken }} ",
+        "resource": "contact",
+        "accountId": "={{ $node['Dados Chatwoot'].json.account_id }}",
+        "operation": "contactSearch",
+        "contactSearchQuery": "={{ $node['Dados Chatwoot'].json.identificador }}"
+      },
+      "id": "76382c91-98f6-4b70-88e7-7469b1d04e81",
+      "name": "ChatWoot1",
+      "type": "n8n-nodes-chatwoot.chatwoot",
+      "typeVersion": 1,
+      "position": [
+        -4585,
+        1763
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Finalização e resumo da campanha",
+        "height": 386.0131707270724,
+        "width": 1141.2533417123389,
+        "color": 4
+      },
+      "id": "217c6c6f-9ffe-493a-8dd9-8288294f3a1a",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select id from contacts c where identifier = '{{ $json.identificador }}' and account_id = {{ $node['get identifier'].json.account_id }}",
+        "additionalFields": {
+          "queryParams": "={{ $json.identificador }}"
+        }
+      },
+      "id": "d57b2e43-a44d-4564-9725-4b92ba2ebac1",
+      "name": "Tem o contato do disparo criado?",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -5540,
+        1600
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Sucesso"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "criado",
+              "stringValue": "={{ $json.created_at }}"
+            },
+            {
+              "name": "id",
+              "stringValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bf385a73-95a9-4942-ae59-7464b0483502",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -8325,
+        2123
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "addToDate",
+        "magnitude": "={{ $json.created_at }}",
+        "duration": 30,
+        "outputFieldName": "DataExclusao",
+        "options": {}
+      },
+      "id": "63229a51-ef9c-4915-876f-d9aba57ad47b",
+      "name": "Date & Time2",
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -8105,
+        2123
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "campaigns",
+          "mode": "list",
+          "cachedResultName": "campaigns"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "id",
+              "value": "={{ $('Edit Fields1').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0729ebd-bfd8-441e-b716-f08b582b5a9e",
+      "name": "Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [
+        -7425,
+        2123
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "dateTime": [
+            {
+              "value1": "={{ $json.DataExclusao }}",
+              "operation": "before",
+              "value2": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "d65b2636-0d99-4dfd-aed9-8aece4ad210c",
+      "name": "IF3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -7905,
+        2123
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Deleta Campanhas cridas e concluídas depois de 30 dias\n",
+        "height": 342.4902042314518,
+        "width": 1625.048192808063
+      },
+      "id": "1092b149-d3df-47ff-8db8-9fef861772a0",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -8860,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.channel_type }}",
+              "value2": "Channel::Sms"
+            }
+          ]
+        }
+      },
+      "id": "5b337c00-91c5-443b-a5e2-4a6726dd4e08",
+      "name": "IF4",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -7860,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Merge3').item.json.anexo }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "6250d13d-e68e-4f01-abe4-a40deee11b11",
+      "name": "IF5",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1080,
+        1400
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "id": "8b4ed163-e839-48c1-a5a1-9e702b000f05",
+      "name": "Wait1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        1200
+      ],
+      "webhookId": "e45af881-eb79-4349-a9fa-434e05ef5a46"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "mensagem",
+              "stringValue": "={{ $('IF5').item.json.mensagemFinal.split('&anexo=')[0] }}"
+            },
+            {
+              "name": "titulo",
+              "stringValue": "={{ $('Merge6').item.json.msg.title }}"
+            }
+          ]
+        },
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "id": "cabe299e-7ae8-4144-8dcc-0ff90625dd88",
+      "name": "Edit Fields2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -560,
+        1620
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "id": "3d7c202d-458e-43c6-9f1c-4e3655379dee",
+      "name": "Wait2",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        1620
+      ],
+      "webhookId": "cb56c782-966a-4fb7-a8ba-4ab565205b5d"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "nome_contato",
+              "stringValue": "Disparador"
+            },
+            {
+              "name": "identificador",
+              "stringValue": "email@email.com"
+            },
+            {
+              "name": "telefone",
+              "type": "numberValue",
+              "numberValue": "+1599999"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "17701ddd-9cd0-46fb-8e18-3d4721a7e234",
+      "name": "Dados contato",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -7200,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.provider_config.account_id }}",
+              "operation": "startsWith",
+              "value2": "741963"
+            },
+            {
+              "value1": "={{ $json.provider_config.api_secret }}",
+              "operation": "startsWith",
+              "value2": "741963"
+            },
+            {
+              "value1": "={{ $json.provider_config.application_id }}",
+              "operation": "startsWith",
+              "value2": "741963"
+            },
+            {
+              "value1": "={{ $json.phone_number }}",
+              "operation": "startsWith",
+              "value2": "+987654321"
+            }
+          ]
+        }
+      },
+      "id": "11c9cc83-c151-4932-a483-e5282481f847",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -8060,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "806b4108-eca4-442b-868b-d7dd94c0d0d6",
+      "name": "Loop Over Items1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -7645,
+        2103
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select * from labels where id = {{ $json['audience'].id }}",
+        "additionalFields": {}
+      },
+      "id": "ac059498-3a7b-42dd-a8e8-3511eb9a650a",
+      "name": "Audience",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -8340,
+        1360
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f797dc4e-5089-4e8e-8398-c51d5934f716",
+      "name": "Loop Over Items2",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -8600,
+        1340
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "audience",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "b439e574-444a-4473-a9ff-1ff6c1344944",
+      "name": "Item Lists1",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        -8880,
+        1340
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a5cad986-2e0a-4aea-8293-b710b178f189",
+      "name": "No Operation, do nothing2",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1260,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.campaign_type }}",
+              "value2": "={{ 1 }}"
+            }
+          ]
+        }
+      },
+      "id": "ac9fc0af-bd91-4222-ae4f-32aaf2a8d634",
+      "name": "IF6",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -9140,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "execution",
+        "filters": {
+          "workflowId": {
+            "__rl": true,
+            "value": "UhwFFvDd5CqLSo5o",
+            "mode": "list",
+            "cachedResultName": "Campanha-CW-Quepasa (#UhwFFvDd5CqLSo5o)"
+          },
+          "status": "waiting"
+        },
+        "options": {
+          "activeWorkflows": true
+        }
+      },
+      "id": "34f6ef6b-5ee8-4606-a08f-f92de9622324",
+      "name": "n8n",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        -8340,
+        2640
+      ],
+      "credentials": {
+        "n8nApi": {
+          "id": "JvK48faYWw6q9ZEL",
+          "name": "n8n account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('Postgres Trigger1').item.json.payload.id }}",
+              "value2": "={{ $json.data.resultData.runData['Postgres Trigger'][0].data.main[0][0].json.payload.id }}"
+            }
+          ]
+        }
+      },
+      "id": "c4d725a5-079b-45d9-a4bc-ed2948910517",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [
+        -8100,
+        2640
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "execution",
+        "operation": "delete",
+        "executionId": "={{ $json.id }}"
+      },
+      "id": "df7d2db3-0ac4-4441-bcbe-5664dd18fda6",
+      "name": "n8n1",
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        -7740,
+        2640
+      ],
+      "credentials": {
+        "n8nApi": {
+          "id": "JvK48faYWw6q9ZEL",
+          "name": "n8n account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## Exclui campanhas agendadas no n8n, quando quando excluidas no chatwooot\n\n## Não utilizada nesta versão",
+        "height": 453.62751731992716,
+        "width": 1303.6212756899345
+      },
+      "id": "9c2e3dbb-bcb4-40a4-a540-9efc4e856814",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -8760,
+        2440
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.anexo }}",
+        "options": {}
+      },
+      "id": "aa6cec2a-437f-4f6e-b5b0-9fd42c5b819f",
+      "name": "baixa anexo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2660,
+        1560
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node['get identifier'].json.webhook_url.split('qphost=')[1].split('&')[0] }}/v3/bot/{{ $('Merge3').item.json.quepasaToken }}/sendbinary",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "=chatId",
+              "value": "={{ $('Merge3').item.json[\"phone_number\"] || $('Merge3').item.json[\"identifier\"] }}"
+            },
+            {
+              "name": "=text",
+              "value": "={{ $('Edit Fields2').item.json.mensagem }}"
+            },
+            {
+              "name": "TrackID",
+              "value": "Anexo"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "0a043154-0f50-4fcf-b0cf-ff1506ca9f7b",
+      "name": "Envia Quepasa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -340,
+        1620
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "=/root/arquivos/{{ $binary.data.fileName }}",
+        "options": {}
+      },
+      "id": "eb11b254-1b65-404f-8855-3cfbfb941f6a",
+      "name": "Write Binary File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -2500,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/root/arquivos/{{ $('Merge3').item.json.anexo.split('disparador-chat/')[1]}}"
+      },
+      "id": "e1e2262a-6c3c-43eb-8a48-6b099ceb9a8f",
+      "name": "Read Binary Files",
+      "type": "n8n-nodes-base.readBinaryFiles",
+      "typeVersion": 1,
+      "position": [
+        -760,
+        1620
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4bac276a-06c4-47ae-add8-344b1da2536c",
+      "name": "Merge3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        -2320,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.anexo }}",
+              "operation": "isEmpty"
+            }
+          ]
+        }
+      },
+      "id": "3f6f4ed0-36f3-4356-af77-9f099bc27db0",
+      "name": "IF7",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2860,
+        1540
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if ($json.msg.message !== undefined && $json.name !== undefined) {\n  // Recebe a mensagem e o nome do JSON\n  const mensagem = $json.msg.message;\n  const nomeCompleto = $json.name;\n\n\n  const partesNome = nomeCompleto.split(' ');\n\n  const primeiroNome = partesNome[0];\n\n  const mensagemFinal = mensagem.replace(\"{{primeiro_nome}}\", primeiroNome);\n\n  return {\n    mensagemFinal: mensagemFinal\n  };\n} else {\n  return {\n    error: \"Variáveis $json.msg.message e/ou $json.name estão indefinidas.\"\n  };\n}\n"
+      },
+      "id": "7e8c0943-ec10-4d54-920a-9b6983b55c58",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1900,
+        1260
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const resultado = {\n  mensagemFinal: $json.mensagemFinal !== null && $json.mensagemFinal !== undefined\n    ? $json.mensagemFinal\n    : ($json.msg && $json.msg.message !== undefined ? $json.msg.message : undefined)\n};\n\nreturn resultado;\n"
+      },
+      "id": "15d4241e-3b20-45af-987f-8eddc2663a73",
+      "name": "Code1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1700,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.msg.message }}",
+              "operation": "contains",
+              "value2": "{{primeiro_nome}}"
+            }
+          ]
+        }
+      },
+      "id": "eaa6943b-09cc-47d3-abba-09ce975097f6",
+      "name": "IF8",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -2120,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "4ed777fa-dbeb-40dc-9204-833e1519f34e",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -10640,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "dateTime": [
+            {
+              "value1": "={{ $json.newDate }}",
+              "operation": "before",
+              "value2": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "id": "f6144bb5-5ee1-4c01-aa59-f41f9bfae56c",
+      "name": "Horario",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -9800,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "tableName": {
+          "__rl": true,
+          "value": "campaigns",
+          "mode": "list",
+          "cachedResultName": "campaigns"
+        },
+        "firesOn": "DELETE",
+        "additionalFields": {}
+      },
+      "id": "d8fcd4c2-c964-438b-b699-4bf25c6d452b",
+      "name": "Postgres Trigger1",
+      "type": "n8n-nodes-base.postgresTrigger",
+      "typeVersion": 1,
+      "position": [
+        -8640,
+        2640
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "id": "b73d81f6-77ae-4891-b264-d2e050d417a0",
+      "name": "Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -8825,
+        2123
+      ],
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM campaigns c WHERE campaign_type = 1 AND campaign_status = 1;\n",
+        "additionalFields": {}
+      },
+      "id": "e2adc6e3-98ae-48af-b21c-f2621a6a2ee4",
+      "name": "Busca Campanha",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -8545,
+        2123
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Trata se há anexo",
+        "height": 551.444898756686,
+        "width": 1090.2696571354245,
+        "color": 7
+      },
+      "id": "c918f8e3-f1fd-4a2b-8de0-13e645dfcf10",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3280,
+        1160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Agendamento das campanhas\n",
+        "height": 456.3958547081602,
+        "width": 1375.9571276467511,
+        "color": 6
+      },
+      "id": "c5a415ae-4e71-488b-8b1a-cfbd4b4adf17",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -10720,
+        1180
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Altere aqui!\n\n## Contato do disparador\n",
+        "height": 333.2624961709923,
+        "width": 320.2141185976817,
+        "color": 3
+      },
+      "id": "a61611a7-f187-42c7-aa74-d33b01b33b83",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -7300,
+        940
+      ]
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n# Com anexo",
+        "height": 281.9254602684759,
+        "width": 910.2124266100393,
+        "color": 5
+      },
+      "id": "6566a7d3-fd2c-41cc-82b8-293a43f9dfe5",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Disparador e Agendamento de mensagens \n\n\nv 1.0.0\n\nVeja o guia de configuração em: [GUIA](https://github.com/ssteeltm/chatwootBrasil/wiki/Campanhas-%E2%80%90-Disparador-de-mensagens-para-o-WhatsApp-%E2%80%90-Api-Quepasa)\n\n",
+        "height": 163.30528430133387,
+        "width": 847.4993167412657,
+        "color": 4
+      },
+      "id": "72e2bbdc-c81c-4165-a3ff-245e2981cf8b",
+      "name": "Sticky Note10",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -10380,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Merge4').item.json.cw_host }}/api/v1/accounts/{{ $('Merge4').item.json.account_id }}/conversations/{{ $('Merge4').item.json[\"conversation_id\"] }}/messages ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Merge4').item.json.utoken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n \"content\": \"✅ Campanha ***{{ $('Merge4').item.json.msg.title }}*** Finalizada para o público: ***{{ $('Merge4').item.json[\"title\"] }}*** \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n} ",
+        "options": {}
+      },
+      "id": "97d513cb-3c44-4403-bb3e-d9c9f5e0e8f1",
+      "name": "envia finalização",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -159,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n## Tempo entre cada mensagem",
+        "height": 669.6911615220205,
+        "width": 262.8300774864693,
+        "color": 3
+      },
+      "id": "47d468f7-052c-4966-b656-0ef224a00689",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        1172.6538489095792
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Sem anexo",
+        "height": 248.5117609021537,
+        "width": 964.1884025094828,
+        "color": 5
+      },
+      "id": "3f01b0a5-2fe3-45a5-9b66-a4c10264e84a",
+      "name": "Sticky Note11",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        1173
+      ]
+    },
+    {
+      "parameters": {
+        "value1": "={{ $json.conversation_id }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "larger",
+              "outputKey": "0"
+            },
+            {
+              "operation": "equal",
+              "outputKey": "1"
+            }
+          ]
+        },
+        "fallbackOutput": 1
+      },
+      "id": "8631c847-d25f-4055-9618-9d495dafe350",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [
+        -3040,
+        1340
+      ]
+    },
+    {
+      "parameters": {
+        "baseUrl": "={{ $node['get identifier'].json.webhook_url.split('qphost=')[1].split('&')[0] }}",
+        "token": "={{ $('Merge3').item.json.quepasaToken }}",
+        "text": "={{ $('Loop Over Items').item.json.mensagemFinal }}",
+        "chatId": "={{ $('Merge3').item.json[\"phone_number\"] || $('Merge3').item.json[\"identifier\"] }}",
+        "trackId": "Chatwoot-Campanha"
+      },
+      "id": "f40a9585-a8d4-4ad8-8dd1-922d670bb55a",
+      "name": "Disparo",
+      "type": "n8n-nodes-quepasa.quepasa",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        1200
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE campaigns SET campaign_status = 1 WHERE id = {{ $json.id }}",
+        "additionalFields": {}
+      },
+      "id": "791babe4-9dbb-4a57-8786-3d8ac5cb113a",
+      "name": "Update Campanha",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -9540,
+        1240
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from campaigns c  where campaign_type = 1  and campaign_status = 0\nLIMIT 1",
+        "additionalFields": {}
+      },
+      "id": "b614d535-4dd9-4893-838f-26b50959ce85",
+      "name": "Campanhas a Disparar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        -10340,
+        1380
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "vSgNoxPsTNRz4Pxu",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "include": "none",
+        "options": {}
+      },
+      "id": "2af5c131-6c8b-4c55-944a-bfe864897b93",
+      "name": "Limpa DAdos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -2660,
+        1420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.mensagemFinal }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "96271687-710e-4944-b986-207e1561904f",
+      "name": "Filter1",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [
+        -1540,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "![ApproachTI](https://approachti.com.br/chat/wp-content/uploads/2023/10/maior.png#full-width)\n\n",
+        "height": 705.875829724637,
+        "width": 1768.3573982426497,
+        "color": 7
+      },
+      "id": "e9cf664b-a25e-4158-a618-bb7bf9ff0180",
+      "name": "Sticky Note12",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -6880,
+        2260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "![ApproachTI](https://github.com/ssteeltm/chatwootBrasil/assets/93339779/5064ed71-ed46-4371-9a75-1f0c39b5d07c#full-width)\n\n",
+        "height": 340.8954212617334,
+        "width": 1768.3573982426497,
+        "color": 7
+      },
+      "id": "ec7b64d8-ed40-4e1c-b170-6e48cdf6d538",
+      "name": "Sticky Note13",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4680,
+        2500
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "subtractFromDate",
+        "magnitude": "={{ $json.scheduled_at }}",
+        "timeUnit": "hours",
+        "duration": 3,
+        "options": {
+          "includeInputFields": true
+        }
+      },
+      "id": "be810895-ea47-483c-9bf5-fbde9c4262e0",
+      "name": "Altera fuso horário",
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -10040,
+        1380
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "94bb10d8-c2ba-4236-8e2e-f29b03796709",
+      "name": "No Operation, do nothing3",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -6400,
+        1320
+      ]
+    }
+  ],
+  "pinData": {
+    "Campanhas a Disparar": [
+      {
+        "json": {
+          "id": "144",
+          "display_id": 98,
+          "title": "teste",
+          "description": null,
+          "message": "teste",
+          "sender_id": null,
+          "enabled": true,
+          "account_id": "1",
+          "inbox_id": "30",
+          "trigger_rules": {},
+          "created_at": "2024-01-20T22:07:37.328Z",
+          "updated_at": "2024-01-20T22:07:37.328Z",
+          "campaign_type": 1,
+          "campaign_status": 0,
+          "audience": [
+            {
+              "id": 5,
+              "type": "Label"
+            }
+          ],
+          "scheduled_at": "2024-01-20T06:00:00.000Z",
+          "trigger_only_during_business_hours": false
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Contatos": {
+      "main": [
+        [
+          {
+            "node": "Item Lists",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get sms inbox": {
+      "main": [
+        [
+          {
+            "node": "IF4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get identifier": {
+      "main": [
+        [
+          {
+            "node": "Set1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get real inbox id": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set1": {
+      "main": [
+        [
+          {
+            "node": "Dados contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Lists": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "IF1": {
+      "main": [
+        [
+          {
+            "node": "Envia mensagem3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ChatWoot1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abre a conversa1": {
+      "main": [
+        [
+          {
+            "node": "Envia mensagem2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria cvs com contato1": {
+      "main": [
+        [
+          {
+            "node": "Abre a conversa1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mensagem inicio": {
+      "main": [
+        [
+          {
+            "node": "Dados Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia mensagem2": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Envia mensagem3": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Dados Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tem o contato do disparo criado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "envia resumo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "envia finalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing1": {
+      "main": [
+        [
+          {
+            "node": "mensagem inicio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge6": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "busca cvs contato1": {
+      "main": [
+        [
+          {
+            "node": "IF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria o Contato1": {
+      "main": [
+        [
+          {
+            "node": "Tem o contato do disparo criado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF2": {
+      "main": [
+        [
+          {
+            "node": "Cria o Contato1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "busca cvs contato1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatWoot1": {
+      "main": [
+        [
+          {
+            "node": "Cria cvs com contato1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem o contato do disparo criado?": {
+      "main": [
+        [
+          {
+            "node": "IF2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Date & Time2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time2": {
+      "main": [
+        [
+          {
+            "node": "IF3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF4": {
+      "main": [
+        [
+          {
+            "node": "get real inbox id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF5": {
+      "main": [
+        [
+          {
+            "node": "Disparo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Binary Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Envia Quepasa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados contato": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "get identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audience": {
+      "main": [
+        [
+          {
+            "node": "get sms inbox",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Contatos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Audience",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Lists1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF6": {
+      "main": [
+        [
+          {
+            "node": "Item Lists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "n8n1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "baixa anexo": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia Quepasa": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Binary File": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Read Binary Files": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "IF8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF7": {
+      "main": [
+        [
+          {
+            "node": "Limpa DAdos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "baixa anexo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF8": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Campanhas a Disparar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Horario": {
+      "main": [
+        [
+          {
+            "node": "Update Campanha",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Trigger1": {
+      "main": [
+        [
+          {
+            "node": "n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Busca Campanha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Campanha": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disparo": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campanhas a Disparar": {
+      "main": [
+        [
+          {
+            "node": "Altera fuso horário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa DAdos": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Altera fuso horário": {
+      "main": [
+        [
+          {
+            "node": "Horario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing3": {
+      "main": [
+        [
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bcb8f299-f562-47b2-8839-35cff562997c",
+  "id": "yrHAlpn5j29X4Mkk",
+  "meta": {
+    "instanceId": "b0f69e3c6d1f5668f6e8b6f67bd5d337293bd6464be3f9adc6773d4609da5a0a"
+  },
+  "tags": [
+    {
+      "createdAt": "2023-11-21T19:00:45.395Z",
+      "updatedAt": "2023-11-21T19:00:45.395Z",
+      "id": "7nmUb0mOypfwOkMa",
+      "name": "Arthur Ferroni"
+    },
+    {
+      "createdAt": "2023-11-21T19:00:40.404Z",
+      "updatedAt": "2023-11-21T19:00:40.404Z",
+      "id": "wJjR9qPnZCKgrmvL",
+      "name": "ApproachTI"
+    },
+    {
+      "createdAt": "2023-11-21T19:00:34.493Z",
+      "updatedAt": "2023-11-21T19:00:34.493Z",
+      "id": "A9TVRVpuh4D1YnJF",
+      "name": "Hugo Sampaio"
+    },
+    {
+      "createdAt": "2023-11-21T01:41:22.368Z",
+      "updatedAt": "2023-11-21T01:41:22.368Z",
+      "id": "aoBWptCNN2xIp8Mg",
+      "name": "Campanhas-Disparo"
+    }
+  ]
+}

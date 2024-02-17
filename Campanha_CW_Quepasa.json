@@ -616,7 +616,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO \"contacts\" (\"name\",\"phone_number\", \"identifier\", \"account_id\", \"created_at\", \"updated_at\", \"last_activity_at\") VALUES ('{{ $('Dados Chatwoot').item.json.nome_contato }}','{{ $('Dados Chatwoot').item.json.telefone }}', '{{ $('Dados Chatwoot').item.json.identifier }}',{{ $json.account }}, NOW(), NOW(), NOW());",
+        "query": "=INSERT INTO \"contacts\" (\"name\",\"phone_number\", \"identifier\", \"account_id\", \"created_at\", \"updated_at\", \"last_activity_at\") VALUES ('{{ $('Dados Chatwoot').item.json.nome_contato }}','{{ $('Dados Chatwoot').item.json.telefone }}', '{{ $('Dados Chatwoot').item.json.identifier }}',{{ $('Dados Chatwoot').item.json.account_id }}, NOW(), NOW(), NOW());",
         "additionalFields": {
           "queryParams": "={{ $json.account }},  {{ $('Dados Chatwoot').item.json.telefone }},  {{ $('Dados Chatwoot').item.json.identificador }},  {{ $('Dados Chatwoot').item.json.nome_contato }}"
         }

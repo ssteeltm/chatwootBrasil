@@ -82,12 +82,7 @@
         620
       ],
       "alwaysOutputData": true,
-      "credentials": {
-        "postgres": {
-          "id": "dTzBis8KLh7BUU9v",
-          "name": "chatwoot_production"
-        }
-      },
+      
       "notes": "Sucesso"
     },
     {
@@ -530,12 +525,7 @@
       "retryOnFail": false,
       "waitBetweenTries": 2000,
       "alwaysOutputData": true,
-      "credentials": {
-        "postgres": {
-          "id": "dTzBis8KLh7BUU9v",
-          "name": "chatwoot_production"
-        }
-      },
+      
       "continueOnFail": true
     },
     {
@@ -945,12 +935,7 @@
         200
       ],
       "alwaysOutputData": true,
-      "credentials": {
-        "postgres": {
-          "id": "dTzBis8KLh7BUU9v",
-          "name": "chatwoot_production"
-        }
-      },
+      
       "notes": "Busca todos os contatos e conversas com as tags marcadas na campanha"
     },
     {

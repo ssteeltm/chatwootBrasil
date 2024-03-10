@@ -1,0 +1,1799 @@
+{
+  "name": "Campanha_CW_API_Chatwoot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "7cda3c92-876f-4471-9ba8-1c504a3402b0",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        740,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "content": "# Agendamento das campanhas\n",
+        "height": 410.34751411292694,
+        "width": 748.4768744595071,
+        "color": 6
+      },
+      "id": "0044c11a-3f7b-4e5f-a367-c4d69fccc83d",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        700,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "dateTime": [
+            {
+              "value1": "={{ $json.scheduled_at }}",
+              "operation": "before",
+              "value2": "={{ $now.plus({hour: 2}).toISO() }}"
+            }
+          ],
+          "number": [
+            {
+              "value1": "={{ $json.campaign_type }}",
+              "operation": "equal",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "id": "ab7f9756-92ae-4e8b-8714-a6953c52bcdf",
+      "name": "Check Scheduled And Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        480
+      ],
+      "notesInFlow": true,
+      "notes": "Ajuste o timezone aqui"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT id FROM contacts\n  WHERE phone_number = '{{ $json.telefone }}'\n  AND account_id = {{ $('Campaigns to send').item.json.account_id }}",
+        "additionalFields": {}
+      },
+      "id": "34f7d3a2-27f9-4a8a-bcbc-e965012f5cca",
+      "name": "Get Contact Sender",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        7660,
+        620
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      },
+      "notes": "Sucesso"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n display_id, \n status\nFROM conversations \nWHERE \n\taccount_id = '{{ $('Campaigns to send').item.json.account_id }}' \n\tAND inbox_id = '{{ $('Campaigns to send').item.json.inbox_id }}'\n\tAND contact_id = '{{ $json.id }}'\nORDER BY id DESC\nLIMIT 1",
+        "options": {
+          "queryReplacement": "="
+        }
+      },
+      "id": "8c787171-1612-461c-9362-13b421e00cd1",
+      "name": "Get Sender Mensage Info",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [
+        8460,
+        640
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/conversations/{{ $json.display_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Info Chatwoot').item.json.user_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n \"content\": \"⚠️ Campanha iniciada no canal: ***{{ $('Campaigns to send').item.json.title }}***\",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
+        "options": {}
+      },
+      "id": "99ab4902-b6eb-44b0-b077-562910b7464a",
+      "name": "Send Msg Star Campaing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        8720,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/conversations/{{ $json.conversation_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Info Chatwoot').item.json.user_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n \"private\": false,\n \"content\": \"⚠️ Campanha ***{{ $('Campaigns to send').item.json.title }}*** Finalizada \",\n \"message_type\": 2,\n \"content_type\": \"text\"\n}",
+        "options": {}
+      },
+      "id": "c719f613-11ba-4dda-9e24-4a23a468d2a3",
+      "name": "Send Msg Finish Campaing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        9280,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/conversations/{{ $json.conversation_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Info Chatwoot').item.json.user_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=Olá!\nEste é o relatório da sua campanha enviada:\n\n***Canal de disparo***: {{ $('Campaigns to send').item.json.title }}\n\n***Mensagem enviada***: {{ $node[\"Prepare Message\"].json[\"message\"][\"text\"].replace(/[^a-z0-9\\s]/gi, '')}}\n\n***Quantidade de contatos enviados***: {{ $('Loop Over Items').context['maxRunIndex'] }}"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            },
+            {
+              "name": "private",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f3010efc-c997-4321-a26d-340c9a788679",
+      "name": "Send Msg Report Campaing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        9280,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.message.origin\n.split('&anexo=')[1] }}",
+        "options": {}
+      },
+      "id": "8d8c55f4-c230-47a0-a3f2-6761ad239a03",
+      "name": "Get attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2960,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/conversations/{{ $json.display_id }}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        },
+        "sendBinaryData": true,
+        "binaryPropertyName": "attachments[]:data",
+        "headerParametersJson": "={ \"api_access_token\": \"{{ $('Info Chatwoot').item.json.user_token }}\" }",
+        "queryParametersJson": "={\n   \"private\": false,\n   \"content\": {{ JSON.stringify($json.mensagemFinal.text) }},\n   \"message_type\": \"outgoing\",\n   \"content_type\": \"text\"\n}"
+      },
+      "name": "Post Incoming Message Attachment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        7000,
+        1000
+      ],
+      "id": "24270d06-6742-4bad-a366-7bfe339bd35a",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/conversations/{{ $json.display_id }}/messages",
+        "allowUnauthorizedCerts": true,
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\n   \"private\": false,\n   \"content\": {{ JSON.stringify($json.mensagemFinal.text) }},\n   \"message_type\": \"outgoing\",\n   \"content_type\": \"text\"\n}",
+        "headerParametersJson": "={ \"api_access_token\": \"{{ $('Info Chatwoot').item.json.user_token }}\" }"
+      },
+      "name": "Post Incoming Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        7000,
+        1180
+      ],
+      "id": "7fcb6ba4-741b-4559-be16-525831b46187",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "amount": "={{ 10 + Math.floor(Math.random() * 5) }}",
+        "unit": "seconds"
+      },
+      "id": "8008c7af-a191-45ca-a1a0-bc03f8faefc5",
+      "name": "Random Interval (10 ~ 15)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        7260,
+        1180
+      ],
+      "webhookId": "820b0f36-b71e-4ad5-91d3-814c1da1a8a2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "89758a1b-2775-464c-b562-b3975d63dd5e",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        6040,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "=/tmp/{{ $binary.data.fileName }}",
+        "options": {}
+      },
+      "id": "e403d62c-9814-45f5-941a-3b9cf6ff4d19",
+      "name": "Write Binary File",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        3180,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.message.attachmentPath }}"
+      },
+      "id": "00065564-a34b-4945-96f0-536e6b039756",
+      "name": "Read Binary Files",
+      "type": "n8n-nodes-base.readBinaryFiles",
+      "typeVersion": 1,
+      "position": [
+        6500,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$json.message?.attachmentPath }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "ab7cde71-1dfd-4194-a6b3-c554b09d0b28",
+      "name": "Send Attachment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        6340,
+        1160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "7575ba2a-4bfe-49a4-9ae5-382187fe907b",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3600,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.origin }}",
+              "operation": "contains",
+              "value2": "{{primeiro_nome}}"
+            }
+          ]
+        }
+      },
+      "id": "455093e8-4c4b-4ef3-82dc-3705cc669aa0",
+      "name": "Msg Has Token?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        5180,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "13c0e348-da0f-4a6a-9974-750ea18bf279",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        4960,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a8326688-a176-41ab-b703-383e701ff5d0",
+              "name": "message.origin",
+              "value": "={{ $json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "8b3f78be-08fb-47b1-a998-195917edb7d9",
+              "name": "message.text",
+              "value": "={{ $json.message.split('&anexo=')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "53ededee-0080-4b0b-94dc-b9378f609882",
+              "name": "message.title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5128377a-12a4-4422-8100-c73fdbd19130",
+      "name": "Prepare Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        2480,
+        620
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b67d7b46-f4e1-43c6-8be4-1fddd843a4af",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "d9a18c64-9d79-4e65-8444-3a92ff7e428f",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        6780,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "365d03c0-4d3a-43fd-bf0e-e94f021cb1c3",
+      "name": "Merge3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        7480,
+        620
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "635621e8-cb19-4555-be82-671d6f12fcee",
+      "name": "Send Info",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.mensagemFinal }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "e3175f80-9dae-406d-bb2b-4fd2cae7c423",
+      "name": "Filter",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [
+        5800,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "id": "a18c5edb-f8fc-4873-a137-a09302cd5032",
+      "name": "Merge4",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        9060,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n display_id,\n contact_id\nFROM conversations \nWHERE \n\taccount_id = '{{ $json.account_id }}' \n\tAND inbox_id = '{{ $json.inbox }}'\n\tAND contact_id = '{{ $json.contact_id }}'\nORDER BY id DESC\nLIMIT 1",
+        "additionalFields": {}
+      },
+      "id": "11e33a96-a7f4-4279-b685-b6617e952335",
+      "name": "Get Last Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        3400,
+        340
+      ],
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "e4d7a513-1974-48da-8401-7a1523c32c81",
+      "name": "Merge5",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3180,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec5b4ecc-cc35-4111-99ac-df47c1b53da3",
+              "name": "inbox",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "35a521ca-e3ab-4022-9d06-7baa2f87fa0a",
+              "name": "account_id",
+              "value": "={{ $('Campaigns to send').item.json.account_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "05fb8f3d-8b08-40ca-bc42-33dd16f11252",
+      "name": "Define Real Inbox",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        2960,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "id": "09e8ced0-3339-410a-8198-8bf5a52b0d8c",
+      "name": "Merge6",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3600,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.display_id }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "42603c4d-9fb4-4871-bd91-07b06d486aa7",
+      "name": "Conversation Found ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3800,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $json.account_id }}/conversations",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "inbox_id",
+              "value": "={{ $json.inbox }}"
+            },
+            {
+              "name": "contact_id",
+              "value": "={{ $json.contact_id }}"
+            },
+            {
+              "name": "status",
+              "value": "pending"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Info Chatwoot').item.json.user_token }}"
+            }
+          ]
+        }
+      },
+      "name": "Create a Conversation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        4260,
+        460
+      ],
+      "id": "4b16a90a-80e5-44fe-9b1e-df8c149d181a",
+      "retryOnFail": true,
+      "notes": "Important to use \"source_id\" to respond messages"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "378243f5-64fa-4ad4-a99b-9be1ece5b05e",
+      "name": "Merge7",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        4040,
+        460
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "52d30aa6-1e70-47bd-ba0a-53d6f89a8333",
+      "name": "Merge8",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        4700,
+        340
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d6870ced-11a3-4f9e-8801-e2941dfcf896",
+      "name": "Send Info1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        7180,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "2f4871ed-d699-4f1d-b2a8-41102c6bf19f",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "65fb62f8-9e4c-4454-83be-a993477e00d8",
+      "name": "Contact Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        7860,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Info Chatwoot').item.json.user_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"inbox_id\": \"{{ $('Merge3').item.json.inbox_id }}\",\n    \"name\": \"{{ $('Merge3').item.json.nome_contato }}\",\n    \"phone_number\": \"{{ $('Merge3').item.json.telefone }}\",\n    \"identifier\": \"{{ $('Merge3').item.json.identificador }}\"\n}",
+        "options": {}
+      },
+      "id": "69fa4338-34f2-4805-8702-f700f0753e9b",
+      "name": "Add Contact",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        8100,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "nome_contato",
+              "stringValue": "Nome do Contato do Bot"
+            },
+            {
+              "name": "identificador",
+              "stringValue": "email@dobot.com"
+            },
+            {
+              "name": "telefone",
+              "stringValue": "+123456"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9d00ce72-946e-4e01-b719-e5511ab0518e",
+      "name": "Dados contato",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        1760,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "link_chatwoot",
+              "stringValue": "https://link.seuchatwoot.com"
+            },
+            {
+              "name": "user_token",
+              "stringValue": "tokenUsurarioChatwoot"
+            },
+            {
+              "name": "Inbox_disparador",
+              "stringValue": "Nome_do_inbox_sms_disparador"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4594797d-7f7d-4617-91ed-23d755a5d977",
+      "name": "Info Chatwoot",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        1540,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Seus dados aqui",
+        "height": 247.37785828595779,
+        "width": 406.1899193205613,
+        "color": 3
+      },
+      "id": "5f256c61-9113-4b64-8d76-3c0d70658930",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "={{ $('Info Chatwoot').item.json.link_chatwoot ?? 'http://127.0.0.1:31000' }}/api/v1/accounts/{{ $('Campaigns to send').item.json.account_id }}/conversations",
+        "allowUnauthorizedCerts": true,
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "status",
+              "value": "open"
+            },
+            {
+              "name": "inbox_id",
+              "value": "={{ $('Merge3').item.json.inbox_id }}"
+            },
+            {
+              "name": "contact_id",
+              "value": "={{ $json.payload.contact.id }}"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "api_access_token",
+              "value": "={{ $('Info Chatwoot').item.json.user_token }}"
+            }
+          ]
+        }
+      },
+      "name": "Create a Conv Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        8280,
+        420
+      ],
+      "id": "8c53265a-8050-445b-b0a8-628c783bfcc3",
+      "retryOnFail": true,
+      "notes": "Important to use \"source_id\" to respond messages"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "32fcc844-eda4-4bca-9562-78afb333b396",
+              "name": "display_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "749fff1c-7819-42df-8051-1408c106087b",
+      "name": "Define display_id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        8460,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "3584f3ce-1bc6-43bf-8d6e-6ef0ef6f755e",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "={{ $('Info Chatwoot').item.json.Inbox_disparador }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d9041e68-913a-47f2-b091-a8ed8f90ed69",
+      "name": "Valid Sender",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT\n    c.name,\n    c.id AS contact_id\nFROM taggings t\nJOIN contacts c ON t.taggable_type = 'Contact' AND t.taggable_id = c.id\nWHERE t.tag_id = ANY (ARRAY[{{ ($jmespath( $('Campaigns to send').item.json[\"audience\"]  , \"[*].id\" )) }}])\n\nUNION\n\nSELECT DISTINCT\n    c.name,\n    c.id AS contact_id\nFROM taggings t\nJOIN conversations conv ON t.taggable_type = 'Conversation' AND t.taggable_id = conv.id\nJOIN contacts c ON t.taggable_type = 'Conversation' AND conv.contact_id = c.id\nWHERE t.tag_id = ANY (ARRAY[{{ ($jmespath( $('Campaigns to send').item.json[\"audience\"]  , \"[*].id\" )) }}]);",
+        "options": {}
+      },
+      "id": "6ec5b30f-a2d4-4e6c-812b-bcc112dac3b0",
+      "name": "Get Contact List",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.2,
+      "position": [
+        2960,
+        200
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      },
+      "notes": "Busca todos os contatos e conversas com as tags marcadas na campanha"
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "message.attachmentPath",
+              "stringValue": "=/tmp/{{ $binary.data.fileName }}"
+            }
+          ]
+        },
+        "include": "none",
+        "options": {}
+      },
+      "id": "6ceb67aa-0337-4137-8465-6ba5891574e9",
+      "name": "Define attachmentPath",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        3400,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE campaigns SET campaign_status = 1 WHERE id = {{ $('Campaigns to send').item.json.id }}",
+        "additionalFields": {}
+      },
+      "id": "97b01df4-e87f-424b-b89a-d21d34ddb5e5",
+      "name": "Update campaign",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        2700,
+        300
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT id\n  FROM inboxes\n  WHERE name = '{{ $('Campaigns to send').item.json.title }}'\n  AND account_id = {{ parseInt($json.account_id) }}\nLIMIT 1",
+        "additionalFields": {}
+      },
+      "id": "b33f4f26-a27f-4a79-a88c-d0930383d100",
+      "name": "Get real inbox id",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        2700,
+        480
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=select * from inboxes where id = {{ $item(\"0\").$node[\"Campaigns to send\"].json[\"inbox_id\"] }} and account_id = {{ $json.account_id }}",
+        "additionalFields": {}
+      },
+      "id": "9f0f55e5-0b1c-4c61-8638-63a2c0e7ef54",
+      "name": "Get sms inbox",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        2280,
+        380
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM campaigns c  WHERE campaign_type = 1  AND campaign_status = 0\nLIMIT 1",
+        "additionalFields": {}
+      },
+      "id": "a95aacbc-5ab2-468e-aaae-5aab6eeaa93a",
+      "name": "Campaigns to send",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        980,
+        480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "dTzBis8KLh7BUU9v",
+          "name": "chatwoot_production"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.message.origin\n }}",
+              "operation": "notContains",
+              "value2": "&anexo="
+            }
+          ]
+        }
+      },
+      "id": "351ea6ab-0e0b-4aa7-94b7-c1dc0695fd55",
+      "name": "Has Attachment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2680,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5dd29f28-b844-4b8d-96bd-1f8a81aa1108",
+              "name": "name",
+              "value": "={{ $json.meta.sender.name }}",
+              "type": "string"
+            },
+            {
+              "id": "52eea91d-5a53-446c-a7f3-2fb1e8d761eb",
+              "name": "contact_id",
+              "value": "={{ $json.meta.sender.id }}",
+              "type": "string"
+            },
+            {
+              "id": "369cf2c6-4baf-4cff-888a-e602163b0ac9",
+              "name": "display_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e8b4e9bf-a5ee-4ff7-b281-b25ac4265b80",
+      "name": "Define conversation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        4460,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const resultado = {\n  mensagemFinal: $json.mensagemFinal !== null && $json.mensagemFinal !== undefined\n    ? $json.mensagemFinal\n    : ($json.message && $json.message.text !== undefined ? $json.message : undefined),\n    id: $json.id,\n    message: {\n      attachmentPath: $json.\nmessage.attachmentPath,\n      origin:$json.message.origin\n    },\n  display_id:$json.display_id\n};\n\nreturn resultado;\n"
+      },
+      "id": "b6479900-71eb-4ae9-ab3b-55607b83d9c3",
+      "name": "Prepare Msg",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5600,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if ($json.message.text !== undefined && $json.name !== undefined) {\n  // Recebe a mensagem e o nome do JSON\n  const mensagem = $json.message.text;\n  const nomeCompleto = $json.name;\n\n\n  const partesNome = nomeCompleto.split(' ');\n\n  const primeiroNome = partesNome[0];\n\n  const mensagemFinal = mensagem.replace(\"{{primeiro_nome}}\", primeiroNome);\n\n  return {\n    mensagemFinal: {\n      title:$json.message.title,\n      text: mensagemFinal      \n    },\n    id: $json.id,\n    message: {\n      attachmentPath: $json.\nmessage.attachmentPath,\n      origin:$json.message.origin\n             },\n    display_id:$json.display_id\n  };\n} else {\n  return {\n    error: \"Variáveis $json.message.text e/ou $json.name estão indefinidas.\"\n  };\n}"
+      },
+      "id": "19cf49a5-067c-4229-8330-4b1039f4a26b",
+      "name": "Msg with token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5400,
+        520
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Campaigns to send",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact Sender": {
+      "main": [
+        [
+          {
+            "node": "Contact Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sender Mensage Info": {
+      "main": [
+        [
+          {
+            "node": "Send Msg Star Campaing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get attachment": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Incoming Message Attachment": {
+      "main": [
+        [
+          {
+            "node": "Random Interval (10 ~ 15)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Incoming Message": {
+      "main": [
+        [
+          {
+            "node": "Random Interval (10 ~ 15)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Random Interval (10 ~ 15)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Binary Files": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Attachment": {
+      "main": [
+        [
+          {
+            "node": "Read Binary Files",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Post Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Binary File": {
+      "main": [
+        [
+          {
+            "node": "Define attachmentPath",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Send Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Msg Has Token?": {
+      "main": [
+        [
+          {
+            "node": "Msg with token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Msg Has Token?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Message": {
+      "main": [
+        [
+          {
+            "node": "Has Attachment",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Scheduled And Type": {
+      "main": [
+        [
+          {
+            "node": "Info Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Prepare Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get sms inbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Post Incoming Message Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Get Contact Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Info": {
+      "main": [
+        [
+          {
+            "node": "Send Info1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send Msg Star Campaing": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Send Msg Finish Campaing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Msg Report Campaing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Define Real Inbox": {
+      "main": [
+        [
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Merge7",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge5": {
+      "main": [
+        [
+          {
+            "node": "Get Last Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Conversation": {
+      "main": [
+        [
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge6": {
+      "main": [
+        [
+          {
+            "node": "Conversation Found ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Found ?": {
+      "main": [
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge7": {
+      "main": [
+        [
+          {
+            "node": "Create a Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a Conversation": {
+      "main": [
+        [
+          {
+            "node": "Define conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge8": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Info1": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Found": {
+      "main": [
+        [
+          {
+            "node": "Add Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Sender Mensage Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Contact": {
+      "main": [
+        [
+          {
+            "node": "Create a Conv Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Info Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Dados contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados contato": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a Conv Info": {
+      "main": [
+        [
+          {
+            "node": "Define display_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Define display_id": {
+      "main": [
+        [
+          {
+            "node": "Send Msg Star Campaing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Sender": {
+      "main": [
+        [
+          {
+            "node": "Get real inbox id",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Contact List": {
+      "main": [
+        [
+          {
+            "node": "Merge6",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Define attachmentPath": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get real inbox id": {
+      "main": [
+        [
+          {
+            "node": "Define Real Inbox",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Contact List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get sms inbox": {
+      "main": [
+        [
+          {
+            "node": "Valid Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Campaigns to send": {
+      "main": [
+        [
+          {
+            "node": "Check Scheduled And Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Attachment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Get attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Define conversation": {
+      "main": [
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Prepare Msg": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Msg with token": {
+      "main": [
+        [
+          {
+            "node": "Prepare Msg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "f0370a44-89a9-461b-b7ca-69d7b670c1c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4a0f5f3188a9d500484dd82054c901fbbd540041b15f649b67aaa262f70ceee"
+  },
+  "id": "UT9JzW0W2SL1B56r",
+  "tags": [
+    {
+      "name": "LucasCoutinho",
+      "id": "c5b1hBaQn9uGS7U8",
+      "createdAt": "2024-03-10T19:26:39.703Z",
+      "updatedAt": "2024-03-10T19:26:39.703Z"
+    },
+    {
+      "createdAt": "2024-03-06T19:55:05.257Z",
+      "updatedAt": "2024-03-06T19:55:05.257Z",
+      "id": "1Gh11cZXs0whmg0J",
+      "name": "Campanhas-Disparo"
+    }
+  ]
+}
